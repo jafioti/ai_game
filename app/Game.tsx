@@ -18,129 +18,172 @@ const { initial_description, history } = z
 // console.log(process.env.NEXT_PUBLIC_ELEVEN_KEY)
 
 type Message = {
-    content: string
-    role: 'user' | 'assistant' | 'system'
+  content: string
+  role: 'user' | 'assistant' | 'system'
 }
 
 export default function Game() {
-    const [initialDescription, setInitialDescription] = useState(
-        'Sci-fi opera featuring Kirby from Nintendo starting a Butlerian Jihad',
-    )
-    const [gameHistory, setGameHistory] = useState<Message[]>([])
+  const [initialDescription, setInitialDescription] = useState(
+    'Sci-fi opera featuring Kirby from Nintendo starting a Butlerian Jihad',
+  )
+  const [gameHistory, setGameHistory] = useState<Message[]>([])
 
-    // Track the current query
-    const [currentUserQuery, setCurrentUserQuery] = useState('')
+  // Track the current query
+  const [currentUserQuery, setCurrentUserQuery] = useState('')
 
-    // Quick mutation
-    const sendQueryMutation = useMutation({
-        mutationFn: async () => {
-            // Clear out the current user query
-            setCurrentUserQuery('')
+  const [currentImage, setCurrentImage] = useState('')
 
-            // Get the query string
-            const query = currentUserQuery.trim()
+  // Quick mutation
+  const sendQueryMutation = useMutation({
+    mutationFn: async () => {
+      // Clear out the current user query
+      setCurrentUserQuery('')
 
-            // Bail if string is empty
-            if (query.length === 0) return
+      // Get the query string
+      const query = currentUserQuery.trim()
 
-            const message: Message = {
-                content: query,
-                role: 'user',
-            }
+      // Bail if string is empty
+      if (query.length === 0) return
 
-            const history = [...gameHistory, message]
+      const message: Message = {
+        content: query,
+        role: 'user',
+      }
 
-            // Send query to API
-            const rawResponse = await fetch('/api/query', {
-                method: 'POST',
-                headers: {
-                    Accept: 'application/json',
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    initial_description: initialDescription,
-                    history: history,
-                }),
-            })
+      const history = [...gameHistory, message]
 
-            // Get the response
-            const response = z.string().parse(await rawResponse.text())
-
-            // Update history
-            setGameHistory([
-                ...history,
-                {
-                    role: 'assistant',
-                    content: response,
-                },
-            ])
-
-            // Now, send the response to Eleven labs for the audio
-            const elevenRawResponse = await fetch(
-                'https://api.elevenlabs.io/v1/text-to-speech/21m00Tcm4TlvDq8ikWAM',
-                {
-                    method: 'POST',
-                    headers: {
-                        Accept: 'application/json',
-                        'Content-Type': 'application/json',
-                        'xi-api-key': process.env.NEXT_PUBLIC_ELEVEN_KEY,
-                    },
-                    body: JSON.stringify({
-                        text: response,
-                        voice_settings: {
-                            stability: 0,
-                            similarity_boost: 0,
-                        },
-                    }),
-                },
-            )
-
-            console.log(elevenRawResponse)
-            const reader = elevenRawResponse!.body!.getReader()
-            const result = await reader.read()
-            const blob = new Blob([result.value!], {
-                type: 'audio/mp3',
-            })
-            const url = window.URL.createObjectURL(blob)
-            window.audio = new Audio()
-            window.audio.src = url
-            window.audio.play()
+      // Send query to API
+      const rawResponse = await fetch('/api/query', {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
         },
-    })
+        body: JSON.stringify({
+          initial_description: initialDescription,
+          history: history,
+        }),
+      })
 
-    return (
-        <div className='flex h-full w-full flex-col overflow-hidden'>
-            {/* Game Visuals Area */}
-            <article className='flex w-full flex-1 flex-col gap-2 overflow-y-auto pb-12'>
-                {gameHistory.map(({ content, role }, key) => {
-                    return <div key={key}>{content}</div>
-                })}
-            </article>
+      // Get the response
+      const response = z.string().parse(await rawResponse.text())
 
-            {/* Chat Input Area */}
-            <section className='flex items-center justify-center '>
-                <form
-                    autoComplete='off'
-                    onSubmit={(event) => {
-                        event.preventDefault()
+      // Update history
+      setGameHistory([
+        ...history,
+        {
+          role: 'assistant',
+          content: response,
+        },
+      ])
 
-                        // Send the query to the backend
-                        sendQueryMutation.mutate()
-                    }}
-                    className='m-2 flex h-16 w-[90%] max-w-4xl flex-row items-center border-2 border-black bg-white text-black shadow-[3px_3px_0_black]'
-                >
-                    <input
-                        type='text'
-                        name='userQuery'
-                        className='h-full flex-1 flex-grow p-2 text-xl outline-none'
-                        placeholder='Choose an action'
-                        value={currentUserQuery}
-                        onChange={(e) =>
-                            setCurrentUserQuery(e.currentTarget.value)
-                        }
-                    />
-                </form>
-            </section>
-        </div>
-    )
+      // Now, send the response to Eleven labs for the audio
+      const elevenRawResponse = await fetch(
+        'https://api.elevenlabs.io/v1/text-to-speech/21m00Tcm4TlvDq8ikWAM',
+        {
+          method: 'POST',
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+            'xi-api-key': process.env.NEXT_PUBLIC_ELEVEN_KEY,
+          },
+          body: JSON.stringify({
+            text: response,
+            voice_settings: {
+              stability: 0,
+              similarity_boost: 0,
+            },
+          }),
+        },
+      )
+
+      console.log(elevenRawResponse)
+      const reader = elevenRawResponse!.body!.getReader()
+      const result = await reader.read()
+      const blob = new Blob([result.value!], {
+        type: 'audio/mp3',
+      })
+      const url = window.URL.createObjectURL(blob)
+      window.audio = new Audio()
+      window.audio.src = url
+      window.audio.play();
+
+      // Get image
+      const rawImageResponse = await fetch('https://api.replicate.com/v1/predictions', {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          'Authorization': 'Token ' + process.env.NEXT_PUBLIC_ELEVEN_KEY,
+        },
+        body: JSON.stringify({
+          version: "db21e45d3f7023abc2a46ee38a23973f6dce16bb082a930b0c49861f96d1e5bf",
+          input: {
+            prompt: response
+          }
+        }),
+      });
+
+      // const imageUrl = z.string().parse(await rawResponse.json()['urls']['get']);
+      const imageUrl = z.object({
+        urls: z.object({
+          "get": z.string()
+        })
+      }).parse(await rawImageResponse.json()).urls.get;
+
+
+      const newRawImageResponse = await fetch(imageUrl, {
+        method: 'GET',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          'Authorization': 'Token ' + process.env.NEXT_PUBLIC_ELEVEN_KEY,
+        },
+      });
+
+      const realImageUrl = z.object({
+        output: z.array(z.string())
+      }).parse(await newRawImageResponse.json()).output[0];
+
+      setCurrentImage(realImageUrl);
+    },
+  })
+
+  return (
+    <div className='flex h-full w-full flex-col overflow-hidden'>
+      {/* Game Visuals Area */}
+      <article className='flex w-full flex-1 flex-col gap-2 overflow-y-auto pb-12'>
+        {gameHistory.map(({ content, role }, key) => {
+          return <div key={key}>{content}</div>
+        })}
+      </article>
+
+      <img src={currentImage} className="object-scale-down w-96 my-4 rounded-lg" />
+
+      {/* Chat Input Area */}
+      <section className='flex items-center justify-center '>
+        <form
+          autoComplete='off'
+          onSubmit={(event) => {
+            event.preventDefault()
+
+            // Send the query to the backend
+            sendQueryMutation.mutate()
+          }}
+          className='m-2 flex h-16 w-[90%] max-w-4xl flex-row items-center border-2 border-black bg-white text-black shadow-[3px_3px_0_black]'
+        >
+          <input
+            type='text'
+            name='userQuery'
+            className='h-full flex-1 flex-grow p-2 text-xl outline-none'
+            placeholder='Choose an action'
+            value={currentUserQuery}
+            onChange={(e) =>
+              setCurrentUserQuery(e.currentTarget.value)
+            }
+          />
+        </form>
+      </section>
+    </div>
+  )
 }
