@@ -1,7 +1,7 @@
 'use client'
 
 import { useMutation } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { z } from 'zod'
 
 /*
@@ -31,6 +31,8 @@ export default function Game() {
     // Track the current query
     const [currentUserQuery, setCurrentUserQuery] = useState('')
 
+    const audioRef = useRef<HTMLAudioElement>(null)
+
     // Quick mutation
     const sendQueryMutation = useMutation({
         mutationFn: async () => {
@@ -49,6 +51,8 @@ export default function Game() {
             }
 
             const history = [...gameHistory, message]
+
+            console.log('Querying ChatGPT')
 
             // Send query to API
             const rawResponse = await fetch('/api/query', {
@@ -75,13 +79,15 @@ export default function Game() {
                 },
             ])
 
+            console.log('Querying ElevenLabs')
+
             // Now, send the response to Eleven labs for the audio
             const elevenRawResponse = await fetch(
                 'https://api.elevenlabs.io/v1/text-to-speech/21m00Tcm4TlvDq8ikWAM',
                 {
                     method: 'POST',
                     headers: {
-                        Accept: 'application/json',
+                        Accept: 'audio/mpeg',
                         'Content-Type': 'application/json',
                         'xi-api-key': process.env.NEXT_PUBLIC_ELEVEN_KEY,
                     },
@@ -101,46 +107,52 @@ export default function Game() {
             const blob = new Blob([result.value!], {
                 type: 'audio/mp3',
             })
-            const url = window.URL.createObjectURL(blob)
-            window.audio = new Audio()
-            window.audio.src = url
-            window.audio.play()
+            const url = URL.createObjectURL(blob)
+            console.log(blob)
+
+            if (audioRef.current) {
+                audioRef.current.src = url
+                audioRef.current.play()
+            }
         },
     })
 
     return (
-        <div className='flex h-full w-full flex-col overflow-hidden'>
-            {/* Game Visuals Area */}
-            <article className='flex w-full flex-1 flex-col gap-2 overflow-y-auto pb-12'>
-                {gameHistory.map(({ content, role }, key) => {
-                    return <div key={key}>{content}</div>
-                })}
-            </article>
+        <>
+            <div className='flex h-full w-full flex-col overflow-hidden'>
+                {/* Game Visuals Area */}
+                <article className='flex w-full flex-1 flex-col gap-2 overflow-y-auto pb-12'>
+                    {gameHistory.map(({ content, role }, key) => {
+                        return <div key={key}>{content}</div>
+                    })}
+                </article>
 
-            {/* Chat Input Area */}
-            <section className='flex items-center justify-center '>
-                <form
-                    autoComplete='off'
-                    onSubmit={(event) => {
-                        event.preventDefault()
+                {/* Chat Input Area */}
+                <section className='flex items-center justify-center '>
+                    <form
+                        autoComplete='off'
+                        onSubmit={(event) => {
+                            event.preventDefault()
 
-                        // Send the query to the backend
-                        sendQueryMutation.mutate()
-                    }}
-                    className='m-2 flex h-16 w-[90%] max-w-4xl flex-row items-center border-2 border-black bg-white text-black shadow-[3px_3px_0_black]'
-                >
-                    <input
-                        type='text'
-                        name='userQuery'
-                        className='h-full flex-1 flex-grow p-2 text-xl outline-none'
-                        placeholder='Choose an action'
-                        value={currentUserQuery}
-                        onChange={(e) =>
-                            setCurrentUserQuery(e.currentTarget.value)
-                        }
-                    />
-                </form>
-            </section>
-        </div>
+                            // Send the query to the backend
+                            sendQueryMutation.mutate()
+                        }}
+                        className='m-2 flex h-16 w-[90%] max-w-4xl flex-row items-center border-2 border-black bg-white text-black shadow-[3px_3px_0_black]'
+                    >
+                        <input
+                            type='text'
+                            name='userQuery'
+                            className='h-full flex-1 flex-grow p-2 text-xl outline-none'
+                            placeholder='Choose an action'
+                            value={currentUserQuery}
+                            onChange={(e) =>
+                                setCurrentUserQuery(e.currentTarget.value)
+                            }
+                        />
+                    </form>
+                </section>
+            </div>
+            <audio ref={audioRef} controls typeof='audio/mp3' />
+        </>
     )
 }
