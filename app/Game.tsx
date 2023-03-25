@@ -27,6 +27,7 @@ export default function Game() {
     'Sci-fi opera featuring Kirby from Nintendo starting a Butlerian Jihad',
   )
   const [gameHistory, setGameHistory] = useState<Message[]>([])
+  const [currentGameResponse, setCurrentGameResponse] = useState<string>()
 
   // Track the current query
   const [currentUserQuery, setCurrentUserQuery] = useState('')
@@ -53,7 +54,6 @@ export default function Game() {
       }
 
       const history = [...gameHistory, message]
-      setGameHistory(history);
 
       // Send query to API
       const rawResponse = await fetch('/api/query', {
@@ -71,6 +71,8 @@ export default function Game() {
       // Get the response
       const response = z.string().parse(await rawResponse.text())
 
+      setCurrentGameResponse(response)
+
       // Update history
       setGameHistory([
         ...history,
@@ -79,38 +81,6 @@ export default function Game() {
           content: response,
         },
       ])
-
-      // Now, send the response to Eleven labs for the audio
-      const elevenRawResponse = await fetch(
-        'https://api.elevenlabs.io/v1/text-to-speech/21m00Tcm4TlvDq8ikWAM',
-        {
-          method: 'POST',
-          headers: {
-            Accept: 'application/json',
-            'Content-Type': 'application/json',
-            'xi-api-key': process.env.NEXT_PUBLIC_ELEVEN_KEY,
-          },
-          body: JSON.stringify({
-            text: response,
-            voice_settings: {
-              stability: 0,
-              similarity_boost: 0,
-            },
-          }),
-        },
-      )
-
-      console.log(elevenRawResponse)
-      const reader = elevenRawResponse!.body!.getReader()
-      const result = await reader.read()
-      const blob = new Blob([result.value!], {
-        type: 'audio/mp3',
-      })
-      var blobUrl = URL.createObjectURL(blob);
-      var audio = new Audio();
-      audio.src = blobUrl;
-      audio.autoplay = true;
-      document.body.appendChild(audio);
 
       const imageURL = await fetch('/api/image', {
         method: 'POST',
@@ -133,9 +103,13 @@ export default function Game() {
       <div className='flex h-full w-full flex-col overflow-hidden'>
         {/* Game Visuals Area */}
         <article className='flex w-full flex-1 flex-col gap-2 overflow-y-auto pb-12'>
-          {gameHistory.map(({ content, role }, key) => {
-            return <div key={key}>{content}</div>
-          })}
+          {sendQueryMutation.isLoading && <div>Loading...</div>}
+
+          {currentGameResponse && (
+            <div className='m-32 border-2 border-black'>
+              {currentGameResponse}
+            </div>
+          )}
 
           {currentImage && (
             <Image
