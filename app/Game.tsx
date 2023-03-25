@@ -22,7 +22,7 @@ export default function Game() {
                         type='text'
                         name='userQuery'
                         className='h-full flex-1 flex-grow p-2 text-xl outline-none'
-                        placeholder='Ask a question here'
+                        placeholder='Choose an action'
                     />
                 </form>
             </section>
