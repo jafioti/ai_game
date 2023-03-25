@@ -31,7 +31,7 @@ export async function POST(request: Request) {
   };
 
   // Make the request
-  fetch("https://api.elevenlabs.io/v1/text-to-speech/21m00Tcm4TlvDq8ikWAM", requestOptions)
+  fetch("https://api.elevenlabs.io/v1/text-to-speech/pNInz6obpgDQGcFmaJgB", requestOptions)
     .then((response) => {
       if (!response.ok) {
         throw new Error("Network response was not ok");
