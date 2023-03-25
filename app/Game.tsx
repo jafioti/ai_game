@@ -108,13 +108,13 @@ export default function Game() {
                 <article className='flex w-full flex-1 flex-col gap-2 overflow-y-auto pb-12'>
                     <div className='m-32'>
                         {lastUserQuery && (
-                            <div className='border-2 border-blue-500'>
+                            <div className='p-4 border-2 border-blue-500'>
                                 {lastUserQuery}
                             </div>
                         )}
 
                         {currentGameResponse && (
-                            <div className='border-2 border-black'>
+                            <div className='p-4 mt-4 border-2 border-black'>
                                 {currentGameResponse}
                             </div>
                         )}
@@ -156,7 +156,6 @@ export default function Game() {
                     </form>
                 </section>
             </div>
-            <audio ref={audioRef} controls typeof='audio/mp3' />
         </>
     )
 }
