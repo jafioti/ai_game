@@ -1,4 +1,5 @@
 'use client'
+import Image from 'next/image'
 
 import { useMutation } from '@tanstack/react-query'
 import { useState, useRef } from 'react'
@@ -33,6 +34,8 @@ export default function Game() {
 
     const audioRef = useRef<HTMLAudioElement>(null)
 
+    const [currentImage, setCurrentImage] = useState<string>()
+
     // Quick mutation
     const sendQueryMutation = useMutation({
         mutationFn: async () => {
@@ -51,8 +54,6 @@ export default function Game() {
             }
 
             const history = [...gameHistory, message]
-
-            console.log('Querying ChatGPT')
 
             // Send query to API
             const rawResponse = await fetch('/api/query', {
@@ -79,41 +80,50 @@ export default function Game() {
                 },
             ])
 
-            console.log('Querying ElevenLabs')
+            // // Now, send the response to Eleven labs for the audio
+            // const elevenRawResponse = await fetch(
+            //     'https://api.elevenlabs.io/v1/text-to-speech/21m00Tcm4TlvDq8ikWAM',
+            //     {
+            //         method: 'POST',
+            //         headers: {
+            //             Accept: 'application/json',
+            //             'Content-Type': 'application/json',
+            //             'xi-api-key': process.env.NEXT_PUBLIC_ELEVEN_KEY,
+            //         },
+            //         body: JSON.stringify({
+            //             text: response,
+            //             voice_settings: {
+            //                 stability: 0,
+            //                 similarity_boost: 0,
+            //             },
+            //         }),
+            //     },
+            // )
 
-            // Now, send the response to Eleven labs for the audio
-            const elevenRawResponse = await fetch(
-                'https://api.elevenlabs.io/v1/text-to-speech/21m00Tcm4TlvDq8ikWAM',
-                {
-                    method: 'POST',
-                    headers: {
-                        Accept: 'audio/mpeg',
-                        'Content-Type': 'application/json',
-                        'xi-api-key': process.env.NEXT_PUBLIC_ELEVEN_KEY,
-                    },
-                    body: JSON.stringify({
-                        text: response,
-                        voice_settings: {
-                            stability: 0,
-                            similarity_boost: 0,
-                        },
-                    }),
+            // console.log(elevenRawResponse)
+            // const reader = elevenRawResponse!.body!.getReader()
+            // const result = await reader.read()
+            // const blob = new Blob([result.value!], {
+            //     type: 'audio/mp3',
+            // })
+            // const url = window.URL.createObjectURL(blob)
+            // window.audio = new Audio()
+            // window.audio.src = url
+            // window.audio.play()
+
+            const imageURL = await fetch('/api/image', {
+                method: 'POST',
+                headers: {
+                    Accept: 'application/json',
+                    'Content-Type': 'application/json',
                 },
-            )
-
-            console.log(elevenRawResponse)
-            const reader = elevenRawResponse!.body!.getReader()
-            const result = await reader.read()
-            const blob = new Blob([result.value!], {
-                type: 'audio/mp3',
+                body: JSON.stringify({
+                    prompt: response,
+                }),
             })
-            const url = URL.createObjectURL(blob)
-            console.log(blob)
+            const parsedImageURL = z.string().parse(await imageURL.text())
 
-            if (audioRef.current) {
-                audioRef.current.src = url
-                audioRef.current.play()
-            }
+            setCurrentImage(parsedImageURL)
         },
     })
 
@@ -125,6 +135,14 @@ export default function Game() {
                     {gameHistory.map(({ content, role }, key) => {
                         return <div key={key}>{content}</div>
                     })}
+
+                    {currentImage && (
+                        <Image
+                            src={currentImage}
+                            alt='Generated Image'
+                            className='object-scale-down w-96 my-4 rounded-lg'
+                        />
+                    )}
                 </article>
 
                 {/* Chat Input Area */}
