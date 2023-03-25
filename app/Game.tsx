@@ -141,6 +141,8 @@ export default function Game() {
                             src={currentImage}
                             alt='Generated Image'
                             className='object-scale-down w-96 my-4 rounded-lg'
+                            width={768}
+                            height={768}
                         />
                     )}
                 </article>

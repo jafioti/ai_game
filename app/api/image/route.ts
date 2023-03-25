@@ -2,23 +2,25 @@ import { Configuration, OpenAIApi } from 'openai'
 import { z } from 'zod'
 
 const configuration = new Configuration({
-  apiKey: process.env.OPENAI_KEY,
+    apiKey: process.env.OPENAI_KEY,
 })
 const openai = new OpenAIApi(configuration)
 
-export async function POST(request: Request) {
-  const { prompt } = z
-    .object({
-      prompt: z.string(),
-    })
-    .parse(await request.json())
+const sleep = (n: number) => new Promise((r) => setTimeout(r, n))
 
-  const completion = await openai.createChatCompletion({
-    model: 'gpt-3.5-turbo',
-    messages: [
-      {
-        role: 'system',
-        content: `You are an assistant helping to prompt an image generation AI.
+export async function POST(request: Request) {
+    const { prompt } = z
+        .object({
+            prompt: z.string(),
+        })
+        .parse(await request.json())
+
+    const completion = await openai.createChatCompletion({
+        model: 'gpt-3.5-turbo',
+        messages: [
+            {
+                role: 'system',
+                content: `You are an assistant helping to prompt an image generation AI.
 
 Here's a guide on how to prompt the AI:
 
@@ -50,41 +52,52 @@ For instance, these prompts will have different outcomes:
 “A dog sitting on a Martian chair.”
 “A dog sitting on a chair on Mars.”
 “A dog sitting on a chair. The chair is on Mars.”`,
-      },
-      { role: 'user', content: "I'm playing a roguelike, and I got the following description:\n" + prompt + "\n\nI want to generate an image for this.\n\nGive me a prompt to send to an image generation AI. The prompt must be only one or two sentences." },
-    ],
-  })
+            },
+            {
+                role: 'user',
+                content:
+                    "I'm playing a roguelike, and I got the following description:\n" +
+                    prompt +
+                    '\n\nI want to generate an image for this.\n\nGive me a prompt to send to an image generation AI. The prompt must be only one or two sentences.',
+            },
+        ],
+    })
 
-  const imagePrompt = completion.data.choices[0].message!.content
+    const imagePrompt = completion.data.choices[0].message!.content
 
+    // Get image
+    const rawImageResponse = await fetch(
+        'https://api.replicate.com/v1/predictions',
+        {
+            method: 'POST',
+            headers: {
+                Accept: 'application/json',
+                'Content-Type': 'application/json',
+                Authorization: 'Token ' + process.env.NEXT_PUBLIC_REPLICATE_KEY,
+            },
+            body: JSON.stringify({
+                version:
+                    'db21e45d3f7023abc2a46ee38a23973f6dce16bb082a930b0c49861f96d1e5bf',
+                input: {
+                    prompt: imagePrompt,
+                },
+            }),
+        },
+    )
 
-  // Get image
-  const rawImageResponse = await fetch('https://api.replicate.com/v1/predictions', {
-    method: 'POST',
-    headers: {
-      Accept: 'application/json',
-      'Content-Type': 'application/json',
-      'Authorization': 'Token ' + process.env.NEXT_PUBLIC_REPLICATE_KEY,
-    },
-    body: JSON.stringify({
-      version: "db21e45d3f7023abc2a46ee38a23973f6dce16bb082a930b0c49861f96d1e5bf",
-      input: {
-        prompt: imagePrompt
-      }
-    }),
-  });
+    const rawJsonResponse = await rawImageResponse.json()
+    const imageUrl = rawJsonResponse.urls['get']
+    await sleep(5000)
+    const newRawImageResponse = await fetch(imageUrl, {
+        method: 'GET',
+        headers: {
+            Authorization: 'Token ' + process.env.NEXT_PUBLIC_REPLICATE_KEY,
+        },
+    })
 
-  const rawJsonResponse = await rawImageResponse.json()
-  const imageUrl = rawJsonResponse.urls['get']
-  const newRawImageResponse = await fetch(imageUrl, {
-    method: 'GET',
-    headers: {
-      'Authorization': 'Token ' + process.env.NEXT_PUBLIC_REPLICATE_KEY,
-    },
-  });
+    const newRawImageJsonResponse = await newRawImageResponse.json()
+    console.log(newRawImageJsonResponse)
+    const realImageURL = newRawImageJsonResponse.output[0]
 
-  const newRawImageJsonResponse = await newRawImageResponse.json();
-  const realImageURL = newRawImageJsonResponse.output[0];
-
-  return new Response(realImageURL);
+    return new Response(realImageURL)
 }
