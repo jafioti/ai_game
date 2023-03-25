@@ -32,6 +32,7 @@ export default function Game() {
 
     // Track the current query
     const [currentUserQuery, setCurrentUserQuery] = useState('')
+    const [lastUserQuery, setLastUserQuery] = useState<string>()
 
     const audioRef = useRef<HTMLAudioElement>(null)
 
@@ -48,6 +49,8 @@ export default function Game() {
 
             // Bail if string is empty
             if (query.length === 0) return
+
+            setLastUserQuery(query)
 
             const message: Message = {
                 content: query,
@@ -103,14 +106,20 @@ export default function Game() {
         <>
             <div className='flex h-full w-full flex-col overflow-hidden'>
                 {/* Game Visuals Area */}
-                <article className='flex w-full flex-1 flex-col gap-2 overflow-y-auto pb-12'>
-                    {sendQueryMutation.isLoading && <div>Loading...</div>}
+                <article className='flex w-full flex-1 flex-col gap-2 overflow-y-auto'>
+                    <div className='m-32'>
+                        {lastUserQuery && (
+                            <div className='border-2 border-blue-500'>
+                                Action: {lastUserQuery}
+                            </div>
+                        )}
 
-                    {currentGameResponse && (
-                        <div className='m-32 border-2 border-black'>
-                            {currentGameResponse}
-                        </div>
-                    )}
+                        {currentGameResponse && (
+                            <div className='border-2 border-black'>
+                                {currentGameResponse}
+                            </div>
+                        )}
+                    </div>
 
                     {currentImage && (
                         <Image
@@ -148,7 +157,6 @@ export default function Game() {
                     </form>
                 </section>
             </div>
-            <audio ref={audioRef} controls typeof='audio/mp3' />
         </>
     )
 }
