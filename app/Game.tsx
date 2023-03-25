@@ -15,6 +15,8 @@ const { initial_description, history } = z
     })
 */
 
+// 'Sci-fi opera featuring Kirby from Nintendo starting a Butlerian Jihad'
+
 // console.log(process.env.NEXT_PUBLIC_ELEVEN_KEY)
 
 type Message = {
@@ -23,9 +25,7 @@ type Message = {
 }
 
 export default function Game() {
-    const [initialDescription, setInitialDescription] = useState(
-        'Sci-fi opera featuring Kirby from Nintendo starting a Butlerian Jihad',
-    )
+    const [initialDescription, setInitialDescription] = useState<string>()
     const [gameHistory, setGameHistory] = useState<Message[]>([])
     const [currentGameResponse, setCurrentGameResponse] = useState<string>()
 
@@ -36,6 +36,12 @@ export default function Game() {
     const audioRef = useRef<HTMLAudioElement>(null)
 
     const [currentImage, setCurrentImage] = useState<string>()
+
+    // Action suggestion
+    const actionSuggestion =
+        typeof initialDescription === 'undefined'
+            ? 'What kind of game would you like to play?'
+            : 'Type an action'
 
     // Quick mutation
     const sendQueryMutation = useMutation({
@@ -48,6 +54,11 @@ export default function Game() {
 
             // Bail if string is empty
             if (query.length === 0) return
+
+            if (typeof initialDescription === 'undefined') {
+                setInitialDescription(query)
+                return
+            }
 
             setLastUserQuery(query)
 
@@ -104,6 +115,8 @@ export default function Game() {
     return (
         <>
             <div className='flex h-full w-full flex-col overflow-hidden'>
+                {initialDescription && <div>{initialDescription}</div>}
+
                 {/* Game Visuals Area */}
                 <article className='flex w-full flex-1 flex-col gap-2 overflow-y-auto pb-12'>
                     <div className='m-16 flex flex-row gap-4'>
@@ -151,7 +164,7 @@ export default function Game() {
                             type='text'
                             name='userQuery'
                             className='h-full flex-1 flex-grow p-2 text-xl outline-none'
-                            placeholder='Choose an action'
+                            placeholder={actionSuggestion}
                             value={currentUserQuery}
                             onChange={(e) =>
                                 setCurrentUserQuery(e.currentTarget.value)
