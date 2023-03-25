@@ -64,41 +64,6 @@ For instance, these prompts will have different outcomes:
     })
 
     const imagePrompt = completion.data.choices[0].message!.content
-
-    // // Get image
-    // const rawImageResponse = await fetch(
-    //     'https://api.replicate.com/v1/predictions',
-    //     {
-    //         method: 'POST',
-    //         headers: {
-    //             Accept: 'application/json',
-    //             'Content-Type': 'application/json',
-    //             Authorization: 'Token ' + process.env.NEXT_PUBLIC_REPLICATE_KEY,
-    //         },
-    //         body: JSON.stringify({
-    //             version:
-    //                 'db21e45d3f7023abc2a46ee38a23973f6dce16bb082a930b0c49861f96d1e5bf',
-    //             input: {
-    //                 prompt: imagePrompt,
-    //             },
-    //         }),
-    //     },
-    // )
-
-    // const rawJsonResponse = await rawImageResponse.json()
-    // const imageUrl = rawJsonResponse.urls['get']
-    // await sleep(5000)
-    // const newRawImageResponse = await fetch(imageUrl, {
-    //     method: 'GET',
-    //     headers: {
-    //         Authorization: 'Token ' + process.env.NEXT_PUBLIC_REPLICATE_KEY,
-    //     },
-    // })
-
-    // const newRawImageJsonResponse = await newRawImageResponse.json()
-    // console.log(newRawImageJsonResponse)
-    // const realImageURL = newRawImageJsonResponse.output[0]
-
     const realImageURL = await generateImage(imagePrompt)
 
     return new Response(realImageURL)
