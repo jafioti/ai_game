@@ -63,3 +63,11 @@ I'm playing a roguelike, and I got the following description:
 I want to generate an image for this.
 
 Give me a prompt to send to an image generation AI.
+
+
+# Initial State prompt
+### System message
+You are a helpful assistant helping with a roguelike game.
+
+### First message
+Come up with a description for the start of a roguelike game, in the following style: <input from user>
