@@ -1,11 +1,6 @@
 import { Configuration, OpenAIApi } from 'openai'
 import { z } from 'zod'
 
-const configuration = new Configuration({
-  apiKey: process.env.OPENAI_KEY,
-})
-const openai = new OpenAIApi(configuration)
-
 export async function POST(request: Request) {
   const { prompt } = z
     .object({
