@@ -2,25 +2,25 @@ import { Configuration, OpenAIApi } from 'openai'
 import { z } from 'zod'
 
 const configuration = new Configuration({
-    apiKey: process.env.OPENAI_KEY,
+  apiKey: process.env.OPENAI_KEY,
 })
 const openai = new OpenAIApi(configuration)
 
 const sleep = (n: number) => new Promise((r) => setTimeout(r, n))
 
 export async function POST(request: Request) {
-    const { prompt } = z
-        .object({
-            prompt: z.string(),
-        })
-        .parse(await request.json())
+  const { prompt } = z
+    .object({
+      prompt: z.string(),
+    })
+    .parse(await request.json())
 
-    const completion = await openai.createChatCompletion({
-        model: 'gpt-3.5-turbo',
-        messages: [
-            {
-                role: 'system',
-                content: `You are an assistant helping to prompt an image generation AI.
+  const completion = await openai.createChatCompletion({
+    model: 'gpt-3.5-turbo',
+    messages: [
+      {
+        role: 'system',
+        content: `You are an assistant helping to prompt an image generation AI.
 
 Here's a guide on how to prompt the AI:
 
@@ -52,86 +52,87 @@ For instance, these prompts will have different outcomes:
 “A dog sitting on a Martian chair.”
 “A dog sitting on a chair on Mars.”
 “A dog sitting on a chair. The chair is on Mars.”`,
-            },
-            {
-                role: 'user',
-                content:
-                    "I'm playing a roguelike, and I got the following description:\n" +
-                    prompt +
-                    '\n\nI want to generate an image for this.\n\nGive me a prompt to send to an image generation AI. The prompt must be only one or two sentences.',
-            },
-        ],
-    })
+      },
+      {
+        role: 'user',
+        content:
+          "I'm playing a roguelike, and I got the following description:\n" +
+          prompt +
+          '\n\nI want to generate an image for this.\n\nGive me a prompt to send to an image generation AI. The prompt must be only one or two sentences.',
+      },
+    ],
+  })
 
-    const imagePrompt = completion.data.choices[0].message!.content
-    const realImageURL = await generateImage(imagePrompt)
+  const imagePrompt = completion.data.choices[0].message!.content
+  const realImageURL = await generateImage(imagePrompt)
 
-    return new Response(realImageURL)
+  return new Response(realImageURL)
 }
 
 async function generateImage(prompt: string): Promise<string | null> {
-    // Try it 3 times
+  // Try it 3 times
 
-    let output = await generateImageSingle(prompt)
+  let output = await generateImageSingle(prompt)
 
-    if (output !== null) {
-        return output[0]
-    }
+  if (output !== null) {
+    return output[0]
+  }
 
-    output = await generateImageSingle(prompt)
+  output = await generateImageSingle(prompt)
 
-    if (output !== null) {
-        return output[0]
-    }
+  if (output !== null) {
+    return output[0]
+  }
 
-    output = await generateImageSingle(prompt)
+  output = await generateImageSingle(prompt)
 
-    if (output !== null) {
-        return output[0]
-    }
+  if (output !== null) {
+    return output[0]
+  }
 
-    return null
+  return null
 }
 
 async function generateImageSingle(prompt: string) {
-    // Setup the
-    const rawImageResponse = await fetch(
-        'https://api.replicate.com/v1/predictions',
-        {
-            method: 'POST',
-            headers: {
-                Accept: 'application/json',
-                'Content-Type': 'application/json',
-                Authorization: 'Token ' + process.env.NEXT_PUBLIC_REPLICATE_KEY,
-            },
-            body: JSON.stringify({
-                version:
-                    'db21e45d3f7023abc2a46ee38a23973f6dce16bb082a930b0c49861f96d1e5bf',
-                input: {
-                    prompt: prompt,
-                },
-            }),
+  // Setup the
+  const rawImageResponse = await fetch(
+    'https://api.replicate.com/v1/predictions',
+    {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        Authorization: 'Token ' + process.env.NEXT_PUBLIC_REPLICATE_KEY,
+      },
+      body: JSON.stringify({
+        version:
+          'db21e45d3f7023abc2a46ee38a23973f6dce16bb082a930b0c49861f96d1e5bf',
+        input: {
+          prompt: prompt,
         },
-    )
+      }),
+    },
+  )
 
-    const rawJsonResponse = await rawImageResponse.json()
-    const imageUrl = rawJsonResponse.urls['get'] as string
-    // We poll every second to check if the image is done
+  const rawJsonResponse = await rawImageResponse.json()
+  const imageUrl = rawJsonResponse.urls['get'] as string
+  console.log("URL: " + imageUrl);
+  // We poll every second to check if the image is done
+  await sleep(5000)
+  for (let i = 0; i < 30; i++) {
+    const newRawImageResponse = await fetch(imageUrl, {
+      method: 'GET',
+      headers: {
+        Authorization: 'Token ' + process.env.NEXT_PUBLIC_REPLICATE_KEY,
+      },
+    })
 
-    for (let i = 0; i < 10; i++) {
-        console.log('Polling Replicate')
-        const newRawImageResponse = await fetch(imageUrl, {
-            method: 'GET',
-            headers: {
-                Authorization: 'Token ' + process.env.NEXT_PUBLIC_REPLICATE_KEY,
-            },
-        })
+    const newRawImageJsonResponse = await newRawImageResponse.json()
+    console.log("JSON Resp: " + JSON.stringify(newRawImageJsonResponse));
 
-        const newRawImageJsonResponse = await newRawImageResponse.json()
-
-        if (newRawImageJsonResponse.completed_at !== null) {
-            return newRawImageJsonResponse.output as string[] | null
-        }
-        await sleep(1000)
+    if (newRawImageJsonResponse.completed_at !== null) {
+      return newRawImageJsonResponse.output as string[] | null
     }
+    await sleep(1000)
+  }
 }
