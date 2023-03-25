@@ -15,6 +15,8 @@ const { initial_description, history } = z
     })
 */
 
+// console.log(process.env.NEXT_PUBLIC_ELEVEN_KEY)
+
 type Message = {
     content: string
     role: 'user' | 'assistant' | 'system'
@@ -72,6 +74,37 @@ export default function Game() {
                     content: response,
                 },
             ])
+
+            // Now, send the response to Eleven labs for the audio
+            const elevenRawResponse = await fetch(
+                'https://api.elevenlabs.io/v1/text-to-speech/21m00Tcm4TlvDq8ikWAM',
+                {
+                    method: 'POST',
+                    headers: {
+                        Accept: 'application/json',
+                        'Content-Type': 'application/json',
+                        'xi-api-key': process.env.NEXT_PUBLIC_ELEVEN_KEY,
+                    },
+                    body: JSON.stringify({
+                        text: response,
+                        voice_settings: {
+                            stability: 0,
+                            similarity_boost: 0,
+                        },
+                    }),
+                },
+            )
+
+            console.log(elevenRawResponse)
+            const reader = elevenRawResponse!.body!.getReader()
+            const result = await reader.read()
+            const blob = new Blob([result.value!], {
+                type: 'audio/mp3',
+            })
+            const url = window.URL.createObjectURL(blob)
+            window.audio = new Audio()
+            window.audio.src = url
+            window.audio.play()
         },
     })
 
