@@ -15,9 +15,11 @@
     "eslint": "8.36.0",
     "eslint-config-next": "13.2.4",
     "next": "13.2.4",
+    "openai": "^3.2.1",
     "react": "18.2.0",
     "react-dom": "18.2.0",
-    "typescript": "5.0.2"
+    "typescript": "5.0.2",
+    "zod": "^3.21.4"
   },
   "devDependencies": {
     "autoprefixer": "^10.4.14",
