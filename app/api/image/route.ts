@@ -116,11 +116,10 @@ async function generateImageSingle(prompt: string) {
 
   const rawJsonResponse = await rawImageResponse.json()
   const imageUrl = rawJsonResponse.urls['get'] as string
-  console.log("URL: " + imageUrl);
   // We poll every second to check if the image is done
-  await sleep(5000)
   for (let i = 0; i < 30; i++) {
     const newRawImageResponse = await fetch(imageUrl, {
+      cache: "no-store",
       method: 'GET',
       headers: {
         Authorization: 'Token ' + process.env.NEXT_PUBLIC_REPLICATE_KEY,
@@ -128,7 +127,6 @@ async function generateImageSingle(prompt: string) {
     })
 
     const newRawImageJsonResponse = await newRawImageResponse.json()
-    console.log("JSON Resp: " + JSON.stringify(newRawImageJsonResponse));
 
     if (newRawImageJsonResponse.completed_at !== null) {
       return newRawImageJsonResponse.output as string[] | null
