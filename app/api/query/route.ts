@@ -8,7 +8,6 @@ const openai = new OpenAIApi(configuration)
 
 export async function POST(request: Request) {
   const raw = await request.json();
-  console.log(raw);
   const { initial_description, history } = z
     .object({
       initial_description: z.string(),
