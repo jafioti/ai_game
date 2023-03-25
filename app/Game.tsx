@@ -106,28 +106,32 @@ export default function Game() {
             <div className='flex h-full w-full flex-col overflow-hidden'>
                 {/* Game Visuals Area */}
                 <article className='flex w-full flex-1 flex-col gap-2 overflow-y-auto pb-12'>
-                    <div className='m-32'>
-                        {lastUserQuery && (
-                            <div className='p-4 border-2 border-blue-500'>
-                                {lastUserQuery}
-                            </div>
-                        )}
+                    <div className='m-16 flex flex-row gap-4'>
+                        <div className='flex-1'>
+                            {lastUserQuery && (
+                                <div className='p-4 border-2 border-blue-500'>
+                                    {lastUserQuery}
+                                </div>
+                            )}
 
-                        {currentGameResponse && (
-                            <div className='p-4 mt-4 border-2 border-black'>
-                                {currentGameResponse}
-                            </div>
-                        )}
+                            {currentGameResponse && (
+                                <div className='p-4 mt-4 border-2 border-black'>
+                                    {currentGameResponse}
+                                </div>
+                            )}
+                        </div>
 
-                        {currentImage && (
-                            <Image
-                                src={currentImage}
-                                alt='Generated Image'
-                                className='object-scale-down w-96 my-4 rounded-lg'
-                                width={768}
-                                height={768}
-                            />
-                        )}
+                        <div className='flex-1'>
+                            {currentImage && (
+                                <Image
+                                    src={currentImage}
+                                    alt='Generated Image'
+                                    className='object-scale-down w-96 rounded-lg'
+                                    width={768}
+                                    height={768}
+                                />
+                            )}
+                        </div>
                     </div>
                 </article>
 
