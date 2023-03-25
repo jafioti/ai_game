@@ -108,44 +108,19 @@ export default function Game() {
       window.audio.src = url
       window.audio.play();
 
-      // Get image
-      const rawImageResponse = await fetch('https://api.replicate.com/v1/predictions', {
+      const imageURL = await fetch('/api/image', {
         method: 'POST',
         headers: {
           Accept: 'application/json',
           'Content-Type': 'application/json',
-          'Authorization': 'Token ' + process.env.NEXT_PUBLIC_ELEVEN_KEY,
         },
         body: JSON.stringify({
-          version: "db21e45d3f7023abc2a46ee38a23973f6dce16bb082a930b0c49861f96d1e5bf",
-          input: {
-            prompt: response
-          }
+          prompt: response,
         }),
-      });
+      })
+      const parsedImageURL = z.string().parse(await imageURL.text())
 
-      // const imageUrl = z.string().parse(await rawResponse.json()['urls']['get']);
-      const imageUrl = z.object({
-        urls: z.object({
-          "get": z.string()
-        })
-      }).parse(await rawImageResponse.json()).urls.get;
-
-
-      const newRawImageResponse = await fetch(imageUrl, {
-        method: 'GET',
-        headers: {
-          Accept: 'application/json',
-          'Content-Type': 'application/json',
-          'Authorization': 'Token ' + process.env.NEXT_PUBLIC_ELEVEN_KEY,
-        },
-      });
-
-      const realImageUrl = z.object({
-        output: z.array(z.string())
-      }).parse(await newRawImageResponse.json()).output[0];
-
-      setCurrentImage(realImageUrl);
+      setCurrentImage(parsedImageURL);
     },
   })
 
