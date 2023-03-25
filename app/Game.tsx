@@ -122,7 +122,7 @@ export default function Game() {
   return (
     <>
       <div className='flex h-full w-full flex-col overflow-hidden'>
-        {initialDescription && <div className="mx-auto my-5 text-2xl font-light">{initialDescription}</div>}
+        {initialDescription && <div className="my-5 text-2xl font-light mx-auto"><strong className='mr-1'>Premise: </strong>{initialDescription}</div>}
 
         {/* Game Visuals Area */}
         <article className='flex w-full flex-1 flex-col gap-2 overflow-y-auto pb-12'>
@@ -182,7 +182,7 @@ export default function Game() {
             />
           </form>
         </section>
-      </div>
+      </div >
     </>
   )
 }
