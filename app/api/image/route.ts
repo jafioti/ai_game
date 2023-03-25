@@ -69,14 +69,28 @@ For instance, these prompts will have different outcomes:
     return new Response(realImageURL)
 }
 
-async function generateImage(prompt: string): Promise<string> {
+async function generateImage(prompt: string): Promise<string | null> {
+    // Try it 3 times
+
     let output = await generateImageSingle(prompt)
 
-    if (output === null) {
-        return generateImage(prompt)
+    if (output !== null) {
+        return output[0]
     }
 
-    return output[0]
+    output = await generateImageSingle(prompt)
+
+    if (output !== null) {
+        return output[0]
+    }
+
+    output = await generateImageSingle(prompt)
+
+    if (output !== null) {
+        return output[0]
+    }
+
+    return null
 }
 
 async function generateImageSingle(prompt: string) {
@@ -104,7 +118,7 @@ async function generateImageSingle(prompt: string) {
     const imageUrl = rawJsonResponse.urls['get'] as string
     // We poll every second to check if the image is done
 
-    while (true) {
+    for (let i = 0; i < 10; i++) {
         console.log('Polling Replicate')
         const newRawImageResponse = await fetch(imageUrl, {
             method: 'GET',
