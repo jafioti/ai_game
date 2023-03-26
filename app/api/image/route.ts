@@ -70,21 +70,7 @@ For instance, these prompts will have different outcomes:
 }
 
 async function generateImage(prompt: string): Promise<string | null> {
-  // Try it 3 times
-
   let output = await generateImageSingle(prompt)
-
-  if (output !== null) {
-    return output[0]
-  }
-
-  output = await generateImageSingle(prompt)
-
-  if (output !== null) {
-    return output[0]
-  }
-
-  output = await generateImageSingle(prompt)
 
   if (output !== null) {
     return output[0]

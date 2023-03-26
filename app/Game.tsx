@@ -19,6 +19,8 @@ const { initial_description, history } = z
 
 // console.log(process.env.NEXT_PUBLIC_ELEVEN_KEY)
 
+const sleep = (n: number) => new Promise((r) => setTimeout(r, n))
+
 type Message = {
   content: string
   role: 'user' | 'assistant' | 'system'
@@ -68,6 +70,9 @@ export default function Game() {
       }
 
       const history = [...gameHistory, message]
+      setGameHistory(history);
+      await sleep(10);
+      document.getElementById("scroll_window")!.scrollTo({ top: document.getElementById("scroll_window")!.scrollHeight, behavior: 'smooth' });
 
       setLoading(true);
       setLoadingImage(false);
@@ -98,6 +103,8 @@ export default function Game() {
           content: response,
         },
       ])
+      await sleep(10);
+      document.getElementById("scroll_window")!.scrollTo({ top: document.getElementById("scroll_window")!.scrollHeight, behavior: 'smooth' });
 
       setLoading(false);
       setLoadingImage(true);
@@ -121,32 +128,38 @@ export default function Game() {
 
   return (
     <>
+      <style>
+        {`/* For Webkit-based browsers (Chrome, Safari and Opera) */
+  .scrollbar-hide::-webkit-scrollbar {
+      display: none;
+  }
+  
+  /* For IE, Edge and Firefox */
+  .scrollbar-hide {
+      -ms-overflow-style: none;  /* IE and Edge */
+      scrollbar-width: none;  /* Firefox */
+  }`}
+      </style>
       <div className='flex h-full w-full flex-col overflow-hidden'>
         {initialDescription && <div className="my-5 text-2xl font-light mx-auto"><strong className='mr-1'>Premise: </strong>{initialDescription}</div>}
 
         {/* Game Visuals Area */}
         <article className='flex w-full flex-1 flex-col gap-2 overflow-y-auto pb-12'>
-          <div className='m-16 flex flex-row gap-4'>
-            <div className='flex-1'>
-              {lastUserQuery && (
-                <div className='p-4 border-2 border-blue-500'>
-                  {lastUserQuery}
+          <div className='mx-auto my-16 flex flex-row gap-4 max-w-7xl'>
+            <div className='flex flex-col w-2/3 max-h-96 overflow-y-scroll pb-2 px-3 scrollbar-hide' id="scroll_window">
+              {gameHistory.map(message => (
+                <div className={'p-4 border-2 rounded-lg mb-3 shadow-lg ' + (message['role'] == "user" ? "border-blue-500":"border-black")} >
+                  {message["content"]}
                 </div>
-              )}
-
-              {currentGameResponse && (
-                <div className='p-4 mt-4 border-2 border-black'>
-                  {currentGameResponse}
-                </div>
-              )}
+              ))}
             </div>
 
-            <div className='flex-1'>
+            <div className='flex-1 max-w-fit'>
               {currentImage && (
                 <Image
                   src={currentImage}
                   alt='Generated Image'
-                  className='object-scale-down w-96 rounded-lg'
+                  className='object-scale-down w-96 rounded-lg shadow-lg'
                   width={768}
                   height={768}
                 />
@@ -168,12 +181,12 @@ export default function Game() {
               // Send the query to the backend
               sendQueryMutation.mutate()
             }}
-            className='m-2 flex h-16 w-[90%] max-w-4xl flex-row items-center border-2 border-black bg-white text-black shadow-[3px_3px_0_black]'
+            className='m-2 flex h-16 w-[90%] max-w-4xl flex-row items-center border-2 border-black bg-white text-black rounded-2xl'
           >
             <input
               type='text'
               name='userQuery'
-              className='h-full flex-1 flex-grow p-2 text-xl outline-none'
+              className='h-full flex-1 flex-grow p-2 text-xl outline-none rounded-2xl'
               placeholder={actionSuggestion}
               value={currentUserQuery}
               onChange={(e) =>
